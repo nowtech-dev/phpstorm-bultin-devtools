@@ -18,6 +18,8 @@ class DevToolsSettings : PersistentStateComponent<DevToolsSettings.State> {
     var compactInspectorUi: Boolean = true,
     /** Match DevTools chrome colors to the IDE theme (Darcula / New UI). */
     var matchIdeTheme: Boolean = true,
+    /** DevTools panel background, e.g. 1E1F22 (PhpStorm New UI). */
+    var devtoolsBackgroundHex: String = "1E1F22",
   )
 
   private var state = State()

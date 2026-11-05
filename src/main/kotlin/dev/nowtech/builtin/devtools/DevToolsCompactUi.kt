@@ -43,16 +43,14 @@ object DevToolsCompactUi {
 
   private fun buildInjectionScript(): String {
     val settings = DevToolsSettings.getInstance().getState()
-    val themeCss =
-      if (settings.matchIdeTheme) {
-        DevToolsIdeTheme.themeCss(DevToolsIdeTheme.read())
-      } else {
-        ""
-      }
+    val ideColors = if (settings.matchIdeTheme) DevToolsIdeTheme.read() else null
+    val themeCss = ideColors?.let { DevToolsIdeTheme.themeCss(it) } ?: ""
+    val themePatchJs = ideColors?.let { DevToolsIdeTheme.themePatchJs(it) } ?: ""
     val compact = settings.compactInspectorUi
     return """
     (function() {
       var themeCss = ${escapeJsString(themeCss)};
+      var themePatchJs = ${escapeJsString(themePatchJs)};
       var compact = $compact;
 
       function isScreencastNode(el) {
@@ -116,13 +114,19 @@ object DevToolsCompactUi {
         }
         css.textContent = parts.join('\\n');
         if (compact) hideRemotePreviewOnly();
+        if (themePatchJs) {
+          try { eval(themePatchJs); } catch (e) {}
+        }
+      }
+
+      function touchUi() {
+        if (compact) hideRemotePreviewOnly();
+        if (themePatchJs) { try { eval(themePatchJs); } catch (e) {} }
       }
 
       applyUi();
       if (!window.__nowtechDevToolsUiObserver) {
-        window.__nowtechDevToolsUiObserver = new MutationObserver(function() {
-          if (compact) hideRemotePreviewOnly();
-        });
+        window.__nowtechDevToolsUiObserver = new MutationObserver(touchUi);
         window.__nowtechDevToolsUiObserver.observe(document.documentElement, { childList: true, subtree: true });
       }
     })();
