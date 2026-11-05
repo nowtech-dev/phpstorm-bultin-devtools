@@ -1,5 +1,9 @@
 # Built-in Browser DevTools
 
+<p align="center">
+  <img src="docs/icon.png" width="160" alt="Built-in Browser DevTools plugin icon"/>
+</p>
+
 JetBrains IDE plugin that turns on **Chromium DevTools** for embedded **JCEF** views (built-in HTML preview, browser tool windows, etc.).
 
 **Plugin ID:** `dev.nowtech.builtin.devtools`  
@@ -20,7 +24,7 @@ JetBrains IDE plugin that turns on **Chromium DevTools** for embedded **JCEF** v
 ## Limitations
 
 - Inspector UI uses CDP `devtoolsFrontendUrl` (hosted Chrome DevTools frontend) when available; local `127.0.0.1/devtools/…` is fallback.
-- JetBrains `openDevtools()` (context menu without this plugin) still opens a blank CEF window on 2026.x.
+- With this plugin disabled, the default IDE DevTools entry may not attach to all JCEF previews on 2026.x.
 - **F12** may conflict with other plugins; rebind under **Settings → Keymap** if needed.
 - Some JCEF views use off-screen rendering (OSR); if DevTools misbehave, try disabling OSR-related registry keys (see JetBrains docs).
 

@@ -38,7 +38,7 @@ object DevToolsInspectorUi {
     }
     DevToolsProjectService.getInstance(targetProject).loadInspector(inspectorUrl)
     toolWindow.activate(null)
-    notify(targetProject, "DevTools opened in the IDE tool window (bottom).", inspectorUrl)
+    devToolsLog.info("Built-in DevTools: opened in IDE tool window url=$inspectorUrl")
   }
 
   private fun notify(project: Project?, message: String, inspectorUrl: String) {

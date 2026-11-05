@@ -7,7 +7,7 @@ object DevToolsRegistry {
   const val CONTEXT_MENU_KEY = "ide.browser.jcef.contextMenu.devTools.enabled"
   const val DEBUG_PORT_KEY = "ide.browser.jcef.debug.port"
 
-  /** JetBrains menu item calls broken {@code openDevtools()} (blank CEF window on 2026.x). */
+  /** Native context menu DevTools uses IDE {@code openDevtools()} instead of this plugin's CDP flow. */
   fun disableNativeContextMenuDevTools(): Boolean {
     return runCatching {
       Registry.get(CONTEXT_MENU_KEY).setValue(false)

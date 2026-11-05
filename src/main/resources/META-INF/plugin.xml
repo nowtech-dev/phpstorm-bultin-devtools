@@ -6,7 +6,7 @@
     Enables <b>Open DevTools</b> for the IDE's embedded Chromium (JCEF) views — including the
     built-in HTML preview / browser — via context menu, <b>F12</b>, and
     <b>Tools → Open Built-in Browser DevTools</b>.<br/><br/>
-    Replaces the broken JetBrains <b>Open DevTools</b> (blank CEF window) with CDP + Chrome/Edge.<br/><br/>
+    Connects via <b>Chrome DevTools Protocol</b> and opens the inspector in the IDE tool window or your system browser.<br/><br/>
     <a href="https://phpstorm.nowtech.dev"><font color="#589DF6">phpstorm.nowtech.dev</font></a>
   ]]></description>
 
