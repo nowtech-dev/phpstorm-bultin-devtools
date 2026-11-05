@@ -16,6 +16,8 @@ class DevToolsSettings : PersistentStateComponent<DevToolsSettings.State> {
     var inspectorHost: String = InspectorHost.IDE_TOOL_WINDOW.name,
     /** Hide screencast preview and target URL bar in the DevTools UI. */
     var compactInspectorUi: Boolean = true,
+    /** Match DevTools chrome colors to the IDE theme (Darcula / New UI). */
+    var matchIdeTheme: Boolean = true,
   )
 
   private var state = State()

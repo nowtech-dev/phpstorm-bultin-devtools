@@ -3,7 +3,9 @@ package dev.nowtech.builtin.devtools
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.Service
+import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.project.ProjectManager
 import com.intellij.openapi.wm.ex.WindowManagerEx
 import com.intellij.ui.jcef.JBCefBrowserBase
 import com.intellij.util.Alarm
@@ -59,6 +61,12 @@ class DevToolsApplicationService : Disposable {
           if (root != null) {
             DevToolsJcefHook.installOnRoot(root, null)
           }
+        }
+      }
+      for (project in ProjectManager.getInstance().openProjects) {
+        val manager = FileEditorManager.getInstance(project)
+        for (editor in manager.allEditors) {
+          DevToolsJcefHook.scanAndHook(editor.component, project)
         }
       }
     }

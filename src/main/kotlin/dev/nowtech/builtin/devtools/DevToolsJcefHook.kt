@@ -10,19 +10,17 @@ import org.cef.handler.CefKeyboardHandlerAdapter
 import org.cef.misc.BoolRef
 import java.awt.Component
 import java.awt.Container
-import java.util.concurrent.ConcurrentHashMap
 import javax.swing.JComponent
 
 object DevToolsJcefHook {
 
   private const val HOOK_MARKER = "dev.nowtech.builtin.devtools.hookInstalled"
-  /** JetBrains native command id (we intercept it when still present). */
+  private const val HANDLERS_PROPERTY = "dev.nowtech.builtin.devtools.handlersAttached"
+
   private const val JB_DEVTOOLS_COMMAND_ID = 28500
-  private const val MENU_COMMAND_ID = 28501
+  private const val MENU_COMMAND_ID = 28650
   private const val MENU_LABEL = "Open DevTools"
   private const val VK_F12 = 123
-
-  private val hookedBrowsers = ConcurrentHashMap.newKeySet<JBCefBrowserBase>()
 
   fun installForProject(project: Project) {
     ApplicationManager.getApplication().invokeLater({
@@ -40,10 +38,11 @@ object DevToolsJcefHook {
     scanAndHook(root, project)
   }
 
-  private fun scanAndHook(root: Component, project: Project?) {
+  fun scanAndHook(root: Component, project: Project?) {
     walkComponents(root) { component ->
       browserFromComponent(component)?.let { ensureHooked(it, project) }
     }
+    JBCefBrowserBase.getFocusedBrowser()?.let { ensureHooked(it, project) }
   }
 
   private fun walkComponents(root: Component, visit: (Component) -> Unit) {
@@ -70,7 +69,10 @@ object DevToolsJcefHook {
   }
 
   fun ensureHooked(browser: JBCefBrowserBase, project: Project?) {
-    if (!hookedBrowsers.add(browser)) {
+    if (browser.isDisposed) {
+      return
+    }
+    if (browser.getProperty(HANDLERS_PROPERTY) == true) {
       return
     }
     scheduleAttach(browser, project, 0)
@@ -78,7 +80,7 @@ object DevToolsJcefHook {
 
   private fun scheduleAttach(browser: JBCefBrowserBase, project: Project?, attempt: Int) {
     if (browser.isDisposed) {
-      hookedBrowsers.remove(browser)
+      browser.setProperty(HANDLERS_PROPERTY, null)
       return
     }
     if (browser.isCefBrowserCreated) {
@@ -88,7 +90,6 @@ object DevToolsJcefHook {
     }
     if (attempt >= 120) {
       devToolsLog.warn("Built-in DevTools: gave up hooking JCEF browser (CEF not created)")
-      hookedBrowsers.remove(browser)
       return
     }
     ApplicationManager.getApplication().invokeLater(
@@ -100,10 +101,9 @@ object DevToolsJcefHook {
   private fun attachHandlers(browser: JBCefBrowserBase, project: Project?) {
     val cefBrowser = browser.cefBrowser ?: return
     val client = browser.getJBCefClient()
-    val menuHandler = DevToolsContextMenuHandler(browser, project)
-    val keyHandler = DevToolsKeyboardHandler(browser, project)
-    client.addContextMenuHandler(menuHandler, cefBrowser)
-    client.addKeyboardHandler(keyHandler, cefBrowser)
+    client.addContextMenuHandler(DevToolsContextMenuHandler(browser, project), cefBrowser)
+    client.addKeyboardHandler(DevToolsKeyboardHandler(browser, project), cefBrowser)
+    browser.setProperty(HANDLERS_PROPERTY, true)
   }
 
   private class DevToolsContextMenuHandler(
@@ -117,7 +117,12 @@ object DevToolsJcefHook {
       params: org.cef.callback.CefContextMenuParams,
       model: org.cef.callback.CefMenuModel,
     ) {
-      model.addItem(MENU_COMMAND_ID, MENU_LABEL)
+      if (model.getIndexOf(MENU_COMMAND_ID) >= 0) {
+        return
+      }
+      if (!model.insertItemAt(0, MENU_COMMAND_ID, MENU_LABEL)) {
+        model.addItem(MENU_COMMAND_ID, MENU_LABEL)
+      }
     }
 
     override fun onContextMenuCommand(

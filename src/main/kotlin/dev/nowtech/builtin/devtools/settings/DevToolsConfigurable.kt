@@ -16,6 +16,7 @@ class DevToolsConfigurable : Configurable {
   private var toolWindowRadio: JBRadioButton? = null
   private var externalRadio: JBRadioButton? = null
   private var compactUiBox: JBCheckBox? = null
+  private var matchThemeBox: JBCheckBox? = null
 
   override fun getDisplayName(): String = "Built-in Browser DevTools"
 
@@ -41,6 +42,11 @@ class DevToolsConfigurable : Configurable {
         "Compact DevTools (hide page preview and URL bar; panels only)",
         settings.getState().compactInspectorUi,
       )
+    matchThemeBox =
+      JBCheckBox(
+        "Match DevTools colors to PhpStorm theme (neutral tab bar, no Chrome blue)",
+        settings.getState().matchIdeTheme,
+      )
     val applyRegistryButton =
       JButton("Apply registry now").apply {
         addActionListener { DevToolsRegistry.disableNativeContextMenuDevTools() }
@@ -50,6 +56,7 @@ class DevToolsConfigurable : Configurable {
       .addComponent(toolWindowRadio!!)
       .addComponent(externalRadio!!)
       .addComponent(compactUiBox!!)
+      .addComponent(matchThemeBox!!)
       .addComponent(
         JBLabel(
           "<html>Uses the CDP <code>devtoolsFrontendUrl</code> (Chrome DevTools on appspot) when available. " +
@@ -70,7 +77,8 @@ class DevToolsConfigurable : Configurable {
       }
     return enableRegistryBox?.isSelected != s.enableContextMenuOnStartup ||
       host != DevToolsSettings.getInstance().resolveInspectorHost() ||
-      compactUiBox?.isSelected != s.compactInspectorUi
+      compactUiBox?.isSelected != s.compactInspectorUi ||
+      matchThemeBox?.isSelected != s.matchIdeTheme
   }
 
   override fun apply() {
@@ -84,6 +92,7 @@ class DevToolsConfigurable : Configurable {
       }
     s.openInExternalBrowser = s.inspectorHost == InspectorHost.EXTERNAL_BROWSER.name
     s.compactInspectorUi = compactUiBox?.isSelected == true
+    s.matchIdeTheme = matchThemeBox?.isSelected == true
   }
 
   override fun reset() {
@@ -94,5 +103,6 @@ class DevToolsConfigurable : Configurable {
       InspectorHost.EXTERNAL_BROWSER -> externalRadio?.isSelected = true
     }
     compactUiBox?.isSelected = s.compactInspectorUi
+    matchThemeBox?.isSelected = s.matchIdeTheme
   }
 }

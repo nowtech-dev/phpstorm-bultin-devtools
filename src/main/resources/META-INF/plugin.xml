@@ -32,6 +32,12 @@
     <notificationGroup id="Built-in Browser DevTools" displayType="BALLOON"/>
   </extensions>
 
+  <projectListeners>
+    <listener
+        class="dev.nowtech.builtin.devtools.DevToolsEditorHookListener"
+        topic="com.intellij.openapi.fileEditor.FileEditorManagerListener"/>
+  </projectListeners>
+
   <actions>
     <action
         id="dev.nowtech.builtin.devtools.OpenDevTools"
