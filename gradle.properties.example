@@ -1,0 +1,6 @@
+kotlin.code.style=official
+org.gradle.jvmargs=-Xmx2048m
+org.gradle.configuration-cache=false
+org.gradle.vfs.watch=false
+
+phpstorm.home=/mnt/c/Program Files/JetBrains/PhpStorm 2026.2.3

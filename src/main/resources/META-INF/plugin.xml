@@ -1,0 +1,49 @@
+<idea-plugin>
+  <id>dev.nowtech.builtin.devtools</id>
+  <name>Built-in Browser DevTools</name>
+  <vendor url="https://phpstorm.nowtech.dev">NOW Tech</vendor>
+  <description><![CDATA[
+    Enables <b>Open DevTools</b> for the IDE's embedded Chromium (JCEF) views — including the
+    built-in HTML preview / browser — via context menu, <b>F12</b>, and
+    <b>Tools → Open Built-in Browser DevTools</b>.<br/><br/>
+    Replaces the broken JetBrains <b>Open DevTools</b> (blank CEF window) with CDP + Chrome/Edge.<br/><br/>
+    <a href="https://phpstorm.nowtech.dev"><font color="#589DF6">phpstorm.nowtech.dev</font></a>
+  ]]></description>
+
+  <depends>com.intellij.modules.platform</depends>
+  <depends>com.intellij.modules.jcef</depends>
+
+  <extensions defaultExtensionNs="com.intellij">
+    <postStartupActivity implementation="dev.nowtech.builtin.devtools.DevToolsStartupActivity"/>
+    <applicationConfigurable
+        parentId="tools"
+        instance="dev.nowtech.builtin.devtools.settings.DevToolsConfigurable"
+        id="dev.nowtech.builtin.devtools.settings"
+        displayName="Built-in Browser DevTools"/>
+    <applicationService
+        serviceImplementation="dev.nowtech.builtin.devtools.settings.DevToolsSettings"/>
+    <applicationService
+        serviceImplementation="dev.nowtech.builtin.devtools.DevToolsApplicationService"/>
+    <projectService serviceImplementation="dev.nowtech.builtin.devtools.DevToolsProjectService"/>
+    <toolWindow id="Built-in Browser DevTools"
+        anchor="bottom"
+        factoryClass="dev.nowtech.builtin.devtools.toolwindow.DevToolsToolWindowFactory"
+        secondary="true"/>
+    <notificationGroup id="Built-in Browser DevTools" displayType="BALLOON"/>
+  </extensions>
+
+  <actions>
+    <action
+        id="dev.nowtech.builtin.devtools.OpenDevTools"
+        class="dev.nowtech.builtin.devtools.OpenBuiltInDevToolsAction"
+        text="Open Built-in Browser DevTools"
+        description="Open Chromium DevTools for the focused embedded browser (JCEF)">
+      <keyboard-shortcut keymap="$default" first-keystroke="F12"/>
+      <keyboard-shortcut keymap="$default" first-keystroke="control shift I"/>
+    </action>
+    <group id="dev.nowtech.builtin.devtools.ToolsGroup">
+      <reference ref="dev.nowtech.builtin.devtools.OpenDevTools"/>
+      <add-to-group group-id="ToolsMenu" anchor="last"/>
+    </group>
+  </actions>
+</idea-plugin>
