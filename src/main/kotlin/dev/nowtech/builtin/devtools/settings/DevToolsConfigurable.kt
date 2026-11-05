@@ -15,6 +15,7 @@ class DevToolsConfigurable : Configurable {
   private var enableRegistryBox: JBCheckBox? = null
   private var toolWindowRadio: JBRadioButton? = null
   private var externalRadio: JBRadioButton? = null
+  private var compactUiBox: JBCheckBox? = null
 
   override fun getDisplayName(): String = "Built-in Browser DevTools"
 
@@ -35,6 +36,11 @@ class DevToolsConfigurable : Configurable {
       InspectorHost.IDE_TOOL_WINDOW -> toolWindowRadio?.isSelected = true
       InspectorHost.EXTERNAL_BROWSER -> externalRadio?.isSelected = true
     }
+    compactUiBox =
+      JBCheckBox(
+        "Compact DevTools (hide page preview and URL bar; panels only)",
+        settings.getState().compactInspectorUi,
+      )
     val applyRegistryButton =
       JButton("Apply registry now").apply {
         addActionListener { DevToolsRegistry.disableNativeContextMenuDevTools() }
@@ -43,6 +49,7 @@ class DevToolsConfigurable : Configurable {
       .addComponent(enableRegistryBox!!)
       .addComponent(toolWindowRadio!!)
       .addComponent(externalRadio!!)
+      .addComponent(compactUiBox!!)
       .addComponent(
         JBLabel(
           "<html>Uses the CDP <code>devtoolsFrontendUrl</code> (Chrome DevTools on appspot) when available. " +
@@ -62,7 +69,8 @@ class DevToolsConfigurable : Configurable {
         InspectorHost.EXTERNAL_BROWSER
       }
     return enableRegistryBox?.isSelected != s.enableContextMenuOnStartup ||
-      host != DevToolsSettings.getInstance().resolveInspectorHost()
+      host != DevToolsSettings.getInstance().resolveInspectorHost() ||
+      compactUiBox?.isSelected != s.compactInspectorUi
   }
 
   override fun apply() {
@@ -75,6 +83,7 @@ class DevToolsConfigurable : Configurable {
         InspectorHost.EXTERNAL_BROWSER.name
       }
     s.openInExternalBrowser = s.inspectorHost == InspectorHost.EXTERNAL_BROWSER.name
+    s.compactInspectorUi = compactUiBox?.isSelected == true
   }
 
   override fun reset() {
@@ -84,5 +93,6 @@ class DevToolsConfigurable : Configurable {
       InspectorHost.IDE_TOOL_WINDOW -> toolWindowRadio?.isSelected = true
       InspectorHost.EXTERNAL_BROWSER -> externalRadio?.isSelected = true
     }
+    compactUiBox?.isSelected = s.compactInspectorUi
   }
 }

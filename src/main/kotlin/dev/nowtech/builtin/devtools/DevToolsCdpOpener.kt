@@ -64,7 +64,7 @@ object DevToolsCdpOpener {
                 )
               val ws = target.webSocketDebuggerUrl
                 ?: throw IllegalStateException("Debug target has no webSocketDebuggerUrl")
-              resolveInspectorUrl(port, target, ws)
+              DevToolsInspectorUrlPolisher.polish(resolveInspectorUrl(port, target, ws))
             }
 
           ApplicationManager.getApplication().invokeLater {

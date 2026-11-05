@@ -18,6 +18,7 @@ class DevToolsProjectService(private val project: Project) : Disposable {
     }
     return JBCefBrowser().also { created ->
       browser = created
+      DevToolsCompactUi.attachIfNeeded(created)
       devToolsLog.info("Built-in DevTools: created tool window JCEF browser for project ${project.name}")
     }
   }

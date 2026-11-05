@@ -14,6 +14,8 @@ class DevToolsSettings : PersistentStateComponent<DevToolsSettings.State> {
     /** @deprecated use [inspectorHost] */
     var openInExternalBrowser: Boolean = false,
     var inspectorHost: String = InspectorHost.IDE_TOOL_WINDOW.name,
+    /** Hide screencast preview and target URL bar in the DevTools UI. */
+    var compactInspectorUi: Boolean = true,
   )
 
   private var state = State()
