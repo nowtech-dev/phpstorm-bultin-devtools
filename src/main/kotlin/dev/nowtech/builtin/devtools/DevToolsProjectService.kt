@@ -1,6 +1,7 @@
 package dev.nowtech.builtin.devtools
 
 import com.intellij.openapi.Disposable
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.project.Project
 import com.intellij.ui.jcef.JBCefBrowser
@@ -38,7 +39,11 @@ class DevToolsProjectService(private val project: Project) : Disposable {
   fun browserComponent(): JComponent = getOrCreateBrowser().component
 
   fun loadInspector(url: String) {
-    getOrCreateBrowser().loadURL(url)
+    val jb = getOrCreateBrowser()
+    jb.loadURL(url)
+    ApplicationManager.getApplication().invokeLater {
+      DevToolsCompactUi.reapplyTheme(jb)
+    }
   }
 
   override fun dispose() {

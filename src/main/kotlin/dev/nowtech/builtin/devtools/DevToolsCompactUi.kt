@@ -133,6 +133,17 @@ object DevToolsCompactUi {
     """.trimIndent()
   }
 
+  fun reapplyTheme(browser: JBCefBrowser) {
+    if (!DevToolsSettings.getInstance().getState().matchIdeTheme) {
+      return
+    }
+    val cef = browser.cefBrowser ?: return
+    ApplicationManager.getApplication().invokeLater {
+      val patch = DevToolsIdeTheme.themePatchJs(DevToolsIdeTheme.read())
+      cef.executeJavaScript(patch, cef.url, 0)
+    }
+  }
+
   private fun escapeJsString(value: String): String {
     val escaped =
       value

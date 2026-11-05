@@ -39,13 +39,17 @@ object DevToolsIdeTheme {
 
   private fun headerAndChromeCss(colors: DevToolsIdeColors): String =
     """
-    :root {
+    :host, :root,
+    html.theme-with-dark-background,
+    html.baseline-default.theme-with-dark-background,
+    html.baseline-grayscale.theme-with-dark-background
+    {
       --sys-color-base: ${colors.background};
-      --sys-color-cdt-base-container: ${colors.surface};
+      --sys-color-cdt-base-container: ${colors.header};
       --sys-color-base-container: ${colors.surface};
       --sys-color-surface: ${colors.background};
       --sys-color-surface-variant: ${colors.surface};
-      --sys-color-tonal-container: ${colors.surface};
+      --sys-color-tonal-container: ${colors.header};
       --sys-color-header-container: ${colors.header};
       --sys-color-primary: ${colors.accent};
       --sys-color-primary-bright: ${colors.accent};
@@ -59,12 +63,11 @@ object DevToolsIdeTheme {
       --color-primary-variant: ${colors.accent};
       --color-tab-selected: ${colors.tabSelected};
       --color-tab-hover: ${colors.surface};
-      --color-tab-selected-transparency: ${colors.tabSelected};
     }
     .tabbed-pane-header, .tabbed-pane-header-contents, .tabbed-pane-header-tabs,
     .tabbed-pane-header-container, .tabbed-pane-header-top, .tabbed-pane-tab-bar,
     .top-toolbar-tabbed-pane, .toolbar-tabbed-pane, [class*="tabbed-pane-header"],
-    .tabbed-pane-tab-slider, #elements-crumbs
+    .tabbed-pane-tab-slider, #elements-crumbs, .toolbar, .toolbar-container
     {
       background-color: ${colors.header} !important;
       background-image: none !important;
@@ -72,7 +75,7 @@ object DevToolsIdeTheme {
       border-color: ${colors.border} !important;
     }
     .tabbed-pane-header-tab, .tabbed-pane-tab, .tabbed-pane-header-tab-title,
-    [role="tab"].tabbed-pane-header-tab
+    [role="tab"]
     {
       color: ${colors.foreground} !important;
       background-color: transparent !important;
@@ -88,8 +91,7 @@ object DevToolsIdeTheme {
       border-bottom: 2px solid ${colors.accent} !important;
       color: ${colors.foreground} !important;
     }
-    .tabbed-pane-tab-slider
-    { background-color: ${colors.accent} !important; }
+    .tabbed-pane-tab-slider { background-color: ${colors.accent} !important; }
     """.trimIndent()
 
   private fun panelCss(colors: DevToolsIdeColors): String =
@@ -100,14 +102,13 @@ object DevToolsIdeTheme {
     .console-view, .network-log-grid, .sources-pane, .pane-tabbed-pane,
     .editor-container, .widget.vbox, .widget.hbox, .panel, .panel-content
     { background-color: ${colors.background} !important; color: ${colors.foreground} !important; }
-    .toolbar, .toolbar-container
-    { background-color: ${colors.background} !important; }
     .sidebar-pane, .drawer-sidebar, .styles-sidebar-pane
     { background-color: ${colors.surface} !important; }
     .tree-outline li.selected, .data-grid-data-grid-node.selected
     { background-color: ${colors.surface} !important; }
     """.trimIndent()
 
+  /** Runs in the DevTools page; pierces nested shadow roots. */
   fun themePatchJs(colors: DevToolsIdeColors): String {
     val headerCss = escapeForJs(headerAndChromeCss(colors))
     return """
@@ -116,59 +117,88 @@ object DevToolsIdeTheme {
       var bodyBg = '${colors.background}';
       var accent = '${colors.accent}';
       var headerCss = '$headerCss';
+      var styleId = 'nowtech-devtools-shadow-theme';
 
-      function injectStyle(root, id, css) {
-        if (!root || root.querySelector('#' + id)) return;
-        var st = document.createElement('style');
-        st.id = id;
-        st.textContent = css;
-        root.appendChild(st);
+      function forceNeutralChromeTheme() {
+        var html = document.documentElement;
+        if (html) {
+          html.classList.remove('baseline-default');
+          html.classList.add('baseline-grayscale', 'theme-with-dark-background');
+        }
+        var tokenTargets = [html, document.body];
+        tokenTargets.forEach(function(el) {
+          if (!el || !el.style) return;
+          el.style.setProperty('--user-color-source', 'baseline-grayscale', 'important');
+          el.style.setProperty('--sys-color-tonal-container', headerBg, 'important');
+          el.style.setProperty('--sys-color-cdt-base-container', headerBg, 'important');
+          el.style.setProperty('--sys-color-header-container', headerBg, 'important');
+          el.style.setProperty('--sys-color-base-container', bodyBg, 'important');
+        });
       }
 
-      function paintElement(el) {
+      function collectRoots() {
+        var roots = [document];
+        var stack = [document];
+        while (stack.length) {
+          var root = stack.pop();
+          root.querySelectorAll('*').forEach(function(el) {
+            if (el.shadowRoot) {
+              roots.push(el.shadowRoot);
+              stack.push(el.shadowRoot);
+            }
+          });
+        }
+        return roots;
+      }
+
+      function injectStyle(root) {
+        if (!root) return;
+        var st = root.querySelector('#' + styleId);
+        if (!st) {
+          st = document.createElement('style');
+          st.id = styleId;
+          root.appendChild(st);
+        }
+        st.textContent = headerCss;
+      }
+
+      function paintBar(el) {
         el.style.setProperty('background-color', headerBg, 'important');
         el.style.setProperty('background-image', 'none', 'important');
         el.style.setProperty('box-shadow', 'none', 'important');
+        el.style.setProperty('border-color', 'transparent', 'important');
       }
 
-      function isBlueish(color) {
+      function isChromeBlue(color) {
         var m = /rgba?\((\d+),\s*(\d+),\s*(\d+)/.exec(color || '');
         if (!m) return false;
         var r = +m[1], g = +m[2], b = +m[3];
-        return b > 70 && b > r + 15 && b >= g;
-      }
-
-      function walkRoots(fn) {
-        fn(document);
-        document.querySelectorAll('*').forEach(function(el) {
-          if (el.shadowRoot) fn(el.shadowRoot);
-        });
+        if (b > 55 && b > r + 8) return true;
+        if (r < 90 && g > 50 && b > 50) return true;
+        return false;
       }
 
       function patchTabChrome() {
-        walkRoots(function(root) {
-          injectStyle(root, 'nowtech-devtools-shadow-theme', headerCss);
+        forceNeutralChromeTheme();
+        collectRoots().forEach(function(root) {
+          injectStyle(root);
           root.querySelectorAll(
             '.tabbed-pane-header, .tabbed-pane-header-contents, .tabbed-pane-header-tabs, ' +
-            '.tabbed-pane-tab-slider, #elements-crumbs, [class*="tabbed-pane-header"]'
-          ).forEach(paintElement);
-        });
-
-        var top = 140;
-        walkRoots(function(root) {
+            '.tabbed-pane-tab-slider, #elements-crumbs, [class*="tabbed-pane-header"], ' +
+            '.toolbar, .toolbar-container'
+          ).forEach(paintBar);
           root.querySelectorAll('*').forEach(function(el) {
             if (!el.getBoundingClientRect) return;
             var rect = el.getBoundingClientRect();
-            if (rect.height < 4 || rect.top > top) return;
+            if (rect.top > 72 || rect.height < 8 || rect.width < 24) return;
             var cn = (el.className && el.className.toString()) || '';
-            if (/tabbed-pane|toolbar|header|crumb/i.test(cn) || el.getAttribute('role') === 'tab') {
-              paintElement(el);
-            } else if (isBlueish(window.getComputedStyle(el).backgroundColor)) {
-              paintElement(el);
+            if (/tabbed-pane|toolbar|header|crumb|navigation/i.test(cn) || el.getAttribute('role') === 'tab') {
+              paintBar(el);
+            } else if (isChromeBlue(window.getComputedStyle(el).backgroundColor)) {
+              paintBar(el);
             }
           });
         });
-
         document.querySelectorAll('[role="tab"]').forEach(function(tab) {
           tab.style.setProperty('background-image', 'none', 'important');
           if (tab.getAttribute('aria-selected') === 'true' || tab.classList.contains('selected')) {
@@ -179,6 +209,19 @@ object DevToolsIdeTheme {
       }
 
       patchTabChrome();
+      if (!window.__nowtechBaselineObserver) {
+        window.__nowtechBaselineObserver = new MutationObserver(function() {
+          forceNeutralChromeTheme();
+        });
+        window.__nowtechBaselineObserver.observe(document.documentElement, {
+          attributes: true,
+          attributeFilter: ['class']
+        });
+        document.addEventListener('themechange', forceNeutralChromeTheme, true);
+      }
+      if (!window.__nowtechTabPatchTimer) {
+        window.__nowtechTabPatchTimer = setInterval(patchTabChrome, 750);
+      }
     })();
     """.trimIndent()
   }
