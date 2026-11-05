@@ -25,6 +25,8 @@
     <applicationService
         serviceImplementation="dev.nowtech.builtin.devtools.DevToolsApplicationService"/>
     <projectService serviceImplementation="dev.nowtech.builtin.devtools.DevToolsProjectService"/>
+    <projectService serviceImplementation="dev.nowtech.builtin.devtools.DevToolsSession"/>
+    <projectService serviceImplementation="dev.nowtech.builtin.devtools.DevToolsProjectWatcher"/>
     <toolWindow id="Built-in Browser DevTools"
         anchor="bottom"
         factoryClass="dev.nowtech.builtin.devtools.toolwindow.DevToolsToolWindowFactory"

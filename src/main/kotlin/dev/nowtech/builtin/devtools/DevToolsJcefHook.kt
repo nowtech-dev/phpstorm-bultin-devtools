@@ -7,6 +7,8 @@ import com.intellij.ui.jcef.JBCefBrowserBase
 import org.cef.browser.CefBrowser
 import org.cef.handler.CefContextMenuHandlerAdapter
 import org.cef.handler.CefKeyboardHandlerAdapter
+import org.cef.handler.CefLifeSpanHandlerAdapter
+import org.cef.handler.CefLoadHandlerAdapter
 import org.cef.misc.BoolRef
 import java.awt.Component
 import java.awt.Container
@@ -69,13 +71,17 @@ object DevToolsJcefHook {
   }
 
   fun ensureHooked(browser: JBCefBrowserBase, project: Project?) {
-    if (browser.isDisposed) {
+    if (browser.isDisposed || DevToolsProjectService.isInspectorBrowser(browser)) {
       return
     }
     if (browser.getProperty(HANDLERS_PROPERTY) == true) {
       return
     }
     scheduleAttach(browser, project, 0)
+  }
+
+  internal fun markHandlersDetached(browser: JBCefBrowserBase) {
+    browser.setProperty(HANDLERS_PROPERTY, null)
   }
 
   private fun scheduleAttach(browser: JBCefBrowserBase, project: Project?, attempt: Int) {
@@ -103,6 +109,33 @@ object DevToolsJcefHook {
     val client = browser.getJBCefClient()
     client.addContextMenuHandler(DevToolsContextMenuHandler(browser, project), cefBrowser)
     client.addKeyboardHandler(DevToolsKeyboardHandler(browser, project), cefBrowser)
+    if (project != null) {
+      client.addLifeSpanHandler(
+        object : CefLifeSpanHandlerAdapter() {
+          override fun onAfterCreated(cef: CefBrowser) {
+            markHandlersDetached(browser)
+            ensureHooked(browser, project)
+            DevToolsSession.getInstance(project).onPreviewBrowserChanged(browser, "cef recreated")
+          }
+        },
+        cefBrowser,
+      )
+      client.addLoadHandler(
+        object : CefLoadHandlerAdapter() {
+          override fun onLoadEnd(
+            cef: CefBrowser,
+            frame: org.cef.browser.CefFrame,
+            httpStatusCode: Int,
+          ) {
+            if (!frame.isMain) {
+              return
+            }
+            DevToolsSession.getInstance(project).onPreviewBrowserChanged(browser, "page loaded")
+          }
+        },
+        cefBrowser,
+      )
+    }
     browser.setProperty(HANDLERS_PROPERTY, true)
   }
 

@@ -4,10 +4,21 @@ import com.intellij.openapi.Disposable
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.project.Project
 import com.intellij.ui.jcef.JBCefBrowser
+import com.intellij.ui.jcef.JBCefBrowserBase
 import javax.swing.JComponent
 
 @Service(Service.Level.PROJECT)
 class DevToolsProjectService(private val project: Project) : Disposable {
+
+  companion object {
+    const val INSPECTOR_PANEL_PROP = "dev.nowtech.builtin.devtools.inspectorPanel"
+
+    fun isInspectorBrowser(browser: JBCefBrowserBase): Boolean =
+      browser.getProperty(INSPECTOR_PANEL_PROP) == true
+
+    fun getInstance(project: Project): DevToolsProjectService =
+      project.getService(DevToolsProjectService::class.java)
+  }
 
   private var browser: JBCefBrowser? = null
 
@@ -18,6 +29,7 @@ class DevToolsProjectService(private val project: Project) : Disposable {
     }
     return JBCefBrowser().also { created ->
       browser = created
+      created.setProperty(INSPECTOR_PANEL_PROP, true)
       DevToolsCompactUi.attachIfNeeded(created)
       devToolsLog.info("Built-in DevTools: created tool window JCEF browser for project ${project.name}")
     }
@@ -34,8 +46,4 @@ class DevToolsProjectService(private val project: Project) : Disposable {
     browser = null
   }
 
-  companion object {
-    fun getInstance(project: Project): DevToolsProjectService =
-      project.getService(DevToolsProjectService::class.java)
-  }
 }

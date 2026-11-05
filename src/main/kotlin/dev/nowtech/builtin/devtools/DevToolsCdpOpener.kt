@@ -38,6 +38,9 @@ object DevToolsCdpOpener {
     }
 
     val pageUrl = browser.cefBrowser?.url.orEmpty()
+    if (project != null && !DevToolsProjectService.isInspectorBrowser(browser)) {
+      DevToolsSession.getInstance(project).trackOpen(browser)
+    }
 
     ApplicationManager.getApplication().invokeLater {
       JBCefApp.getInstance().getRemoteDebuggingPort { port ->

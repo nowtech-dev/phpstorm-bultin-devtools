@@ -5,7 +5,7 @@ plugins {
 }
 
 group = "dev.nowtech"
-version = "1.2.3"
+version = "1.2.5"
 
 kotlin {
   jvmToolchain(21)

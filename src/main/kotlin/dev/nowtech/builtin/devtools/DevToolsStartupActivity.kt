@@ -19,6 +19,7 @@ class DevToolsStartupActivity : StartupActivity {
       }
     }
 
+    DevToolsProjectWatcher.touch(project)
     DevToolsJcefHook.installForProject(project)
     DevToolsApplicationService.getInstance().scanAllWindows()
   }

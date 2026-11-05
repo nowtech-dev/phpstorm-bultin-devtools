@@ -14,7 +14,6 @@ data class DevToolsIdeColors(
 
 object DevToolsIdeTheme {
 
-  /** PhpStorm New UI tool window background (user preference). */
   private const val DEFAULT_BG = "#1E1F22"
   private const val SURFACE = "#2B2D30"
   private const val HEADER = "#2B2D30"
@@ -36,7 +35,9 @@ object DevToolsIdeTheme {
     )
   }
 
-  fun themeCss(colors: DevToolsIdeColors): String =
+  fun themeCss(colors: DevToolsIdeColors): String = headerAndChromeCss(colors) + panelCss(colors)
+
+  private fun headerAndChromeCss(colors: DevToolsIdeColors): String =
     """
     :root {
       --sys-color-base: ${colors.background};
@@ -58,17 +59,12 @@ object DevToolsIdeTheme {
       --color-primary-variant: ${colors.accent};
       --color-tab-selected: ${colors.tabSelected};
       --color-tab-hover: ${colors.surface};
+      --color-tab-selected-transparency: ${colors.tabSelected};
     }
-    html, body, .theme-with-dark-background, .-theme-with-dark-background,
-    .widget-root, .inspected-target, .tabbed-pane-main-content, .main-content,
-    .split-view-contents, .split-widget-contents, .elements-pane, .styles-pane,
-    .console-view, .network-log-grid, .sources-pane, .pane-tabbed-pane,
-    .editor-container, .widget.vbox, .widget.hbox, .panel, .panel-content
-    { background-color: ${colors.background} !important; color: ${colors.foreground} !important; }
-    .tabbed-pane-header, .tabbed-pane-header-tabs, .tabbed-pane-tab-bar,
-    .tabbed-pane-header-container, .tabbed-pane-header-top, .top-toolbar-tabbed-pane,
-    .toolbar-tabbed-pane, [class*="tabbed-pane-header"], [class*="TabBar"],
-    header.devtools-tabbar, .tabbed-pane-header .tabbed-pane-header-tabs
+    .tabbed-pane-header, .tabbed-pane-header-contents, .tabbed-pane-header-tabs,
+    .tabbed-pane-header-container, .tabbed-pane-header-top, .tabbed-pane-tab-bar,
+    .top-toolbar-tabbed-pane, .toolbar-tabbed-pane, [class*="tabbed-pane-header"],
+    .tabbed-pane-tab-slider, #elements-crumbs
     {
       background-color: ${colors.header} !important;
       background-image: none !important;
@@ -92,36 +88,107 @@ object DevToolsIdeTheme {
       border-bottom: 2px solid ${colors.accent} !important;
       color: ${colors.foreground} !important;
     }
-    .toolbar, .toolbar-container, .toolbar-button:not(:hover)
+    .tabbed-pane-tab-slider
+    { background-color: ${colors.accent} !important; }
+    """.trimIndent()
+
+  private fun panelCss(colors: DevToolsIdeColors): String =
+    """
+    html, body, .theme-with-dark-background, .-theme-with-dark-background,
+    .widget-root, .inspected-target, .tabbed-pane-main-content, .main-content,
+    .split-view-contents, .split-widget-contents, .elements-pane, .styles-pane,
+    .console-view, .network-log-grid, .sources-pane, .pane-tabbed-pane,
+    .editor-container, .widget.vbox, .widget.hbox, .panel, .panel-content
+    { background-color: ${colors.background} !important; color: ${colors.foreground} !important; }
+    .toolbar, .toolbar-container
     { background-color: ${colors.background} !important; }
     .sidebar-pane, .drawer-sidebar, .styles-sidebar-pane
     { background-color: ${colors.surface} !important; }
-    .tree-outline li.selected, .data-grid-data-grid-node.selected,
-    .elements-tree .selected
+    .tree-outline li.selected, .data-grid-data-grid-node.selected
     { background-color: ${colors.surface} !important; }
     """.trimIndent()
 
-  fun themePatchJs(colors: DevToolsIdeColors): String =
-    """
+  fun themePatchJs(colors: DevToolsIdeColors): String {
+    val headerCss = escapeForJs(headerAndChromeCss(colors))
+    return """
     (function() {
       var headerBg = '${colors.header}';
       var bodyBg = '${colors.background}';
       var accent = '${colors.accent}';
-      document.querySelectorAll(
-        '.tabbed-pane-header, .tabbed-pane-header-tabs, .tabbed-pane-tab-bar, .tabbed-pane-header-top'
-      ).forEach(function(el) {
+      var headerCss = '$headerCss';
+
+      function injectStyle(root, id, css) {
+        if (!root || root.querySelector('#' + id)) return;
+        var st = document.createElement('style');
+        st.id = id;
+        st.textContent = css;
+        root.appendChild(st);
+      }
+
+      function paintElement(el) {
         el.style.setProperty('background-color', headerBg, 'important');
         el.style.setProperty('background-image', 'none', 'important');
-      });
-      document.querySelectorAll('.tabbed-pane-header-tab, .tabbed-pane-tab, [role="tab"]').forEach(function(tab) {
-        tab.style.setProperty('background-image', 'none', 'important');
-        if (tab.getAttribute('aria-selected') === 'true' || tab.classList.contains('selected')) {
-          tab.style.setProperty('background-color', bodyBg, 'important');
-          tab.style.setProperty('border-bottom-color', accent, 'important');
-        }
-      });
+        el.style.setProperty('box-shadow', 'none', 'important');
+      }
+
+      function isBlueish(color) {
+        var m = /rgba?\((\d+),\s*(\d+),\s*(\d+)/.exec(color || '');
+        if (!m) return false;
+        var r = +m[1], g = +m[2], b = +m[3];
+        return b > 70 && b > r + 15 && b >= g;
+      }
+
+      function walkRoots(fn) {
+        fn(document);
+        document.querySelectorAll('*').forEach(function(el) {
+          if (el.shadowRoot) fn(el.shadowRoot);
+        });
+      }
+
+      function patchTabChrome() {
+        walkRoots(function(root) {
+          injectStyle(root, 'nowtech-devtools-shadow-theme', headerCss);
+          root.querySelectorAll(
+            '.tabbed-pane-header, .tabbed-pane-header-contents, .tabbed-pane-header-tabs, ' +
+            '.tabbed-pane-tab-slider, #elements-crumbs, [class*="tabbed-pane-header"]'
+          ).forEach(paintElement);
+        });
+
+        var top = 140;
+        walkRoots(function(root) {
+          root.querySelectorAll('*').forEach(function(el) {
+            if (!el.getBoundingClientRect) return;
+            var rect = el.getBoundingClientRect();
+            if (rect.height < 4 || rect.top > top) return;
+            var cn = (el.className && el.className.toString()) || '';
+            if (/tabbed-pane|toolbar|header|crumb/i.test(cn) || el.getAttribute('role') === 'tab') {
+              paintElement(el);
+            } else if (isBlueish(window.getComputedStyle(el).backgroundColor)) {
+              paintElement(el);
+            }
+          });
+        });
+
+        document.querySelectorAll('[role="tab"]').forEach(function(tab) {
+          tab.style.setProperty('background-image', 'none', 'important');
+          if (tab.getAttribute('aria-selected') === 'true' || tab.classList.contains('selected')) {
+            tab.style.setProperty('background-color', bodyBg, 'important');
+            tab.style.setProperty('border-bottom-color', accent, 'important');
+          }
+        });
+      }
+
+      patchTabChrome();
     })();
     """.trimIndent()
+  }
+
+  private fun escapeForJs(css: String): String =
+    css
+      .replace("\\", "\\\\")
+      .replace("'", "\\'")
+      .replace("\r", "")
+      .replace("\n", " ")
 
   private fun normalizeHex(raw: String): String {
     val trimmed = raw.trim().removePrefix("#")

@@ -15,7 +15,9 @@ class DevToolsEditorHookListener : FileEditorManagerListener {
   }
 
   override fun selectionChanged(event: com.intellij.openapi.fileEditor.FileEditorManagerEvent) {
-    hookEditors(event.manager.project)
+    val project = event.manager.project
+    hookEditors(project)
+    DevToolsSession.getInstance(project).scheduleReconnect("editor selection")
   }
 
   private fun hookEditors(project: Project) {
