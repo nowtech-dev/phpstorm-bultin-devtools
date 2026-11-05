@@ -7,7 +7,11 @@
     built-in HTML preview / browser — via context menu, <b>F12</b>, and
     <b>Tools → Open Built-in Browser DevTools</b>.<br/><br/>
     Connects via <b>Chrome DevTools Protocol</b> and opens the inspector in the IDE tool window or your system browser.<br/><br/>
+    <a href="https://plugins.jetbrains.com/plugin/35811-built-in-browser-devtools">JetBrains Marketplace</a>
+    ·
     <a href="https://phpstorm.nowtech.dev"><font color="#589DF6">phpstorm.nowtech.dev</font></a>
+    ·
+    <a href="https://donate.stripe.com/test_dRm8wObyog0J83pgdZcjS00">Support development</a>
   ]]></description>
 
   <depends>com.intellij.modules.platform</depends>

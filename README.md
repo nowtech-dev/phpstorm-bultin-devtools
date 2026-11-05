@@ -47,6 +47,12 @@ Do **not** use `bundledPlugin()` in Gradle for JCEF here — JCEF is compile-onl
 
 ## Install
 
+### JetBrains Marketplace
+
+[![Install to JetBrains IDE(s)](https://img.shields.io/badge/JetBrains_Marketplace-Install-000000?style=for-the-badge&logo=jetbrains)](https://plugins.jetbrains.com/plugin/35811-built-in-browser-devtools)
+
+### Install from disk (development build)
+
 **Settings → Plugins → Install Plugin from Disk…** → ZIP → restart IDE.
 
 Re-open HTML preview / browser tabs after install so the context menu picks up the registry change.
@@ -60,6 +66,10 @@ Built-in DevTools: enabled registry key ide.browser.jcef.contextMenu.devTools.en
 ```
 
 Logger: `dev.nowtech.builtin.devtools`
+
+## Support
+
+If this plugin saves you time, consider a [donation](https://donate.stripe.com/test_dRm8wObyog0J83pgdZcjS00).
 
 ## License
 
